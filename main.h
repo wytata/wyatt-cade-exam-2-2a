@@ -7,6 +7,7 @@ Approximate Pi using the Leibniz formula
 #include <vector>
 #include <chrono>
 #include <mutex>
+#include <condition_variable>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,6 +23,9 @@ static long long int num_steps = 1000000000;
 double step;
 
 // add synchronization primitive(s) here
+mutex m;
+condition_variable cv;
+int value = 1;
 
 // Do not modify this function
 inline void single_sum_thread(int id, int num_threads, double sum[NUM_THREADS][PAD])
@@ -36,8 +40,14 @@ inline void single_sum_thread(int id, int num_threads, double sum[NUM_THREADS][P
 }
 
 // TODO
-inline void pi_sum_thread(/* add necessary arguments here */)
+inline void pi_sum_thread(double *pi, double sum[][PAD], int i)
 {
-    // add code here
+    unique_lock<mutex> ul(m);
+    cv.wait(ul, []{return value > 0;});
+    value = 0;
+    *pi += sum[i][0] * step;
+    value = 1;
+    ul.unlock();
+    cv.notify_all();
     sleep(1); // DO NOT REMOVE THIS
 }
